@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  web-yt-dlp:
+    build: .
+    container_name: web-yt-dlp
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOST=0.0.0.0
+      - TMP_DIR=/tmp/yt-dlp-workdir
+      - AUTO_UPDATE_YTDLP=true
+      - XDG_CACHE_HOME=/tmp/yt-dlp-workdir
+      # Authentication token (optional - can also use auth_token file)
+      # - AUTH_TOKEN=your-secret-token-here
+    restart: unless-stopped
+    volumes:
+      # Writable temp directory for downloads
+      - yt-dlp-temp:/tmp/yt-dlp-workdir
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => { process.exit(r.statusCode === 200 ? 0 : 1); })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    # Resource limits (adjust as needed)
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    networks:
+      - ytdlp_internal_shared
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ytdlp.rule=Host(`dl.example.com`) && (PathPrefix(`/`))"
+      - "traefik.http.routers.ytdlp.entrypoints=websecure"
+      - "traefik.http.routers.ytdlp.tls=true"
+      # If you use a certresolver (e.g. cloudflare), add it to your Traefik setup and uncomment next line
+      - "traefik.http.routers.ytdlp.tls.certresolver=cloudflare"
+      - "traefik.http.services.ytdlp.loadbalancer.server.port=3000"
+
+volumes:
+  yt-dlp-temp:
+
+networks:
+  ytdlp_internal_shared:
+    external: true
