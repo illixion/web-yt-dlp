@@ -81,6 +81,45 @@
             border-color: #667eea;
         }
 
+        select {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            background: #fff;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .field-hint {
+            color: #666;
+            font-size: 13px;
+            display: block;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 480px) {
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+        }
+
         button {
             width: 100%;
             padding: 14px;
@@ -240,13 +279,35 @@
             </div>
             <div class="form-group">
                 <label for="videoUrl">Video URL</label>
-                <input 
-                    type="text" 
-                    id="videoUrl" 
-                    name="url" 
-                    placeholder="https://www.youtube.com/watch?v=..." 
+                <input
+                    type="text"
+                    id="videoUrl"
+                    name="url"
+                    placeholder="https://www.youtube.com/watch?v=..."
                     required
                 >
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="preset">Codec</label>
+                    <select id="preset" name="preset">
+                        <option value="h264" selected>H.264 (compatible)</option>
+                        <option value="h265">H.265 / HEVC (smaller)</option>
+                    </select>
+                    <small class="field-hint">H.264 plays everywhere. H.265 is smaller at the same quality but needs a modern device to decode.</small>
+                </div>
+                <div class="form-group">
+                    <label for="quality">Quality</label>
+                    <select id="quality" name="height">
+                        <option value="360">360p</option>
+                        <option value="480">480p</option>
+                        <option value="720">720p</option>
+                        <option value="1080" selected>1080p</option>
+                        <option value="1440">1440p</option>
+                        <option value="2160">2160p</option>
+                    </select>
+                    <small class="field-hint">Maximum height; picks the best track at or below it.</small>
+                </div>
             </div>
             <button type="submit" id="submitBtn">Download Video</button>
         </form>
@@ -341,6 +402,8 @@ Returns the download URL when ready</code></pre>
             const url = document.getElementById('videoUrl').value.trim();
             if (!url) return;
 
+            const preset = document.getElementById('preset').value;
+            const height = parseInt(document.getElementById('quality').value, 10);
             const token = authTokenInput.value.trim();
 
             // Save token to localStorage if provided
@@ -358,7 +421,7 @@ Returns the download URL when ready</code></pre>
 
             try {
                 // Create job
-                const jobPayload = { url };
+                const jobPayload = { url, preset, height };
                 if (authEnabled && token) {
                     jobPayload.token = token;
                 }

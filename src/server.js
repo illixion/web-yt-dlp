@@ -238,7 +238,7 @@ function encodeArgsFor(preset, vt, { realtime } = {}) {
 }
 
 // Helper function to run yt-dlp
-async function downloadVideo(url, jobId, preset = resolvePreset()) {
+async function downloadVideo(url, jobId, preset = resolvePreset(), height = 1080) {
   const job = jobs.get(jobId);
   if (!job) throw new Error('Job not found');
 
@@ -259,18 +259,18 @@ async function downloadVideo(url, jobId, preset = resolvePreset()) {
   const encodeArgs = encodeArgsFor(preset, vt, { realtime: false });
 
   return new Promise((resolve, reject) => {
-    // iOS-compatible format selection with 1080p limit
+    // iOS-compatible format selection capped at the requested height.
     // Priority: Try to get pre-encoded MP4/H264/AAC that iOS can play natively
     // Fallback: If not available, download best quality and convert
     const formatSelector = [
-      // First try: Best iOS-compatible format (MP4 container, H264 video, AAC/M4A audio) up to 1080p
-      'bestvideo[ext=mp4][vcodec^=avc][height<=1080]+bestaudio[ext=m4a][acodec^=mp4a]',
-      // Second try: Any MP4 video + M4A audio up to 1080p
-      'bestvideo[ext=mp4][height<=1080]+bestaudio[ext=m4a]',
-      // Third try: Best MP4 up to 1080p (pre-merged)
-      'best[ext=mp4][height<=1080]',
-      // Fourth try: Any video up to 1080p (will need conversion)
-      'bestvideo[height<=1080]+bestaudio',
+      // First try: Best iOS-compatible format (MP4 container, H264 video, AAC/M4A audio)
+      `bestvideo[ext=mp4][vcodec^=avc][height<=${height}]+bestaudio[ext=m4a][acodec^=mp4a]`,
+      // Second try: Any MP4 video + M4A audio
+      `bestvideo[ext=mp4][height<=${height}]+bestaudio[ext=m4a]`,
+      // Third try: Best MP4 (pre-merged)
+      `best[ext=mp4][height<=${height}]`,
+      // Fourth try: Any video up to the height (will need conversion)
+      `bestvideo[height<=${height}]+bestaudio`,
       // Final fallback: Best available
       'best'
     ].join('/');
@@ -416,14 +416,17 @@ app.post('/api/jobs', authenticateRequest, async (req, res) => {
     return res.status(400).json({ error: 'URL is required' });
   }
 
-  // `preset` may come from the body or the query string (h264 | h265).
+  // `preset` and `height` may come from the body or the query string.
   const preset = resolvePreset(req.body.preset ?? req.query.preset);
+  const requestedHeight = parseInt(req.body.height ?? req.query.height, 10);
+  const height = Math.min(Number.isFinite(requestedHeight) ? requestedHeight : 1080, 2160);
 
   const jobId = uuidv4();
   const job = {
     id: jobId,
     url: url,
     preset: preset.name,
+    height: height,
     status: 'pending',
     progress: 0,
     createdAt: Date.now()
@@ -432,7 +435,7 @@ app.post('/api/jobs', authenticateRequest, async (req, res) => {
   jobs.set(jobId, job);
 
   // Start download asynchronously
-  downloadVideo(url, jobId, preset).catch(err => {
+  downloadVideo(url, jobId, preset, height).catch(err => {
     console.error(`Job ${jobId} failed:`, err);
   });
 
