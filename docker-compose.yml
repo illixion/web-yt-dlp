@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   web-yt-dlp:
     build: .
@@ -13,8 +11,8 @@ services:
       - TMP_DIR=/tmp/yt-dlp-workdir
       - AUTO_UPDATE_YTDLP=true
       - XDG_CACHE_HOME=/tmp/yt-dlp-workdir
-      # Authentication token (optional - can also use auth_token file)
-      # - AUTH_TOKEN=your-secret-token-here
+      # AUTH_TOKEN is host-specific — set it in docker-compose.override.yml
+      # (see docker-compose.override.yml.example). Do NOT commit real tokens.
     restart: unless-stopped
     volumes:
       # Writable temp directory for downloads
@@ -34,20 +32,6 @@ services:
         reservations:
           cpus: '0.5'
           memory: 512M
-    networks:
-      - ytdlp_internal_shared
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.ytdlp.rule=Host(`dl.example.com`) && (PathPrefix(`/`))"
-      - "traefik.http.routers.ytdlp.entrypoints=websecure"
-      - "traefik.http.routers.ytdlp.tls=true"
-      # If you use a certresolver (e.g. cloudflare), add it to your Traefik setup and uncomment next line
-      - "traefik.http.routers.ytdlp.tls.certresolver=cloudflare"
-      - "traefik.http.services.ytdlp.loadbalancer.server.port=3000"
 
 volumes:
   yt-dlp-temp:
-
-networks:
-  ytdlp_internal_shared:
-    external: true

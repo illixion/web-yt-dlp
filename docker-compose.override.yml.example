@@ -1,0 +1,33 @@
+# Host-specific overrides — copy to docker-compose.override.yml and customize.
+#
+#   cp docker-compose.override.yml.example docker-compose.override.yml
+#
+# docker-compose.override.yml is gitignored, so secrets and host-specific config
+# (auth token, reverse-proxy labels, external networks) never get committed.
+# Docker Compose merges it on top of docker-compose.yml automatically — no -f needed.
+#
+# Everything below is OPTIONAL. Keep only what this host needs.
+
+services:
+  web-yt-dlp:
+    environment:
+      # API auth token — see AUTHENTICATION.md. Use a long random secret.
+      - AUTH_TOKEN=change-me-to-a-long-random-secret
+
+    # --- Reverse proxy (Traefik) example -------------------------------------
+    # Requires the external network below. Delete this block if not using Traefik.
+    networks:
+      - ytdlp_internal_shared
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ytdlp.rule=Host(`dl.example.com`) && (PathPrefix(`/`))"
+      - "traefik.http.routers.ytdlp.entrypoints=websecure"
+      - "traefik.http.routers.ytdlp.tls=true"
+      - "traefik.http.routers.ytdlp.tls.certresolver=cloudflare"
+      - "traefik.http.services.ytdlp.loadbalancer.server.port=3000"
+
+# External network shared with Traefik (create once on the host):
+#   docker network create ytdlp_internal_shared
+networks:
+  ytdlp_internal_shared:
+    external: true

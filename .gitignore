@@ -9,3 +9,6 @@ yarn-error.log
 
 # Authentication token - NEVER commit this!
 auth_token
+
+# Host-specific Docker Compose overrides (secrets, reverse-proxy labels, etc.)
+docker-compose.override.yml

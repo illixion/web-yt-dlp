@@ -76,14 +76,28 @@ If no `auth_token` file or `AUTH_TOKEN` environment variable is found, the serve
 
 ```bash
 # Using Docker Compose
-docker-compose up -d
+docker compose up -d
 
 # Or using Docker CLI
 docker build -t web-yt-dlp .
 docker run -d -p 3000:3000 --name web-yt-dlp web-yt-dlp
 ```
 
-See **[DOCKER.md](DOCKER.md)** for complete Docker documentation.
+#### Host-specific config (auth token, reverse proxy)
+
+`docker-compose.yml` is a generic template with no secrets. Put anything
+host-specific — the `AUTH_TOKEN`, Traefik/reverse-proxy labels, external
+networks — into a **`docker-compose.override.yml`**, which Compose merges on
+top automatically and which is gitignored so it never gets committed:
+
+```bash
+cp docker-compose.override.yml.example docker-compose.override.yml
+# edit docker-compose.override.yml, then:
+docker compose up -d --build
+```
+
+This keeps the tracked files clean so the deployment can `git pull` updates
+without conflicting with local config.
 
 ### Option 2: Direct Node.js
 
