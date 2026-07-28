@@ -13,7 +13,7 @@
   "license": "ISC",
   "description": "A yt-dlp web frontend with iOS shortcuts support",
   "dependencies": {
-    "express": "^4.18.2",
+    "express": "^4.22.2",
     "uuid": "^9.0.1"
   },
   "devDependencies": {},
